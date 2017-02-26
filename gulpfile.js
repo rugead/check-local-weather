@@ -89,8 +89,10 @@ gulp.task('watch', function () {
     var files = [buildPaths.build];
 
     browserSync.init(files, {
+        // proxy: "example.com",
         browser: 'chrome',
         server: './build',
+        https: true,
         logFileChange: false,
         port: 8000
     });

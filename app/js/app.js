@@ -1,118 +1,53 @@
-const listen = require('good-listener');
-const audioArray = ['red', 'blue', 'green', 'yellow'];
-const buttons = document.querySelector('#buttons');
-const controls = document.querySelector('#controls');
+jQuery(document).ready(function () {
 
-const playSingleSound = (id) => {
-    let classId = 'div.' + id;
-    document.getElementById(id).play();
-    document.querySelector(classId).style.backgroundColor = '#ccc';
-    setTimeout(function () {
-        document.querySelector(classId).style.backgroundColor = '';
-    }, 500);
-}
+    var celsius = 0;
+    var fahrenheit = 0;
+    var city = '';
+    var icon = '';
 
-document.querySelector('#run-button').addEventListener('click', () => playRandomSoundArray(), false);
-document.querySelector('#reset-button').addEventListener('click', () => reset(), false);
+    var options = {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+    };
 
-document.querySelector('div.red').addEventListener('click', () => hhh('red'));
-document.querySelector('div.blue').addEventListener('click', () => hhh('blue'));
-document.querySelector('div.green').addEventListener('click', () => hhh('green'));
-document.querySelector('div.yellow').addEventListener('click', () => hhh('yellow'));
+    function success(pos) {
+        var baseurl = 'https://api.wunderground.com/api/687fb2c5192b74a3/conditions/q/';
+        var latitude = pos.coords.latitude;
+        var longitude = pos.coords.longitude;
+        var url = baseurl.concat(latitude, ',', longitude, '.json');
 
-let timeoutIDIgnore;
-let randomSoundArray = [];
-let playedSoundArray = [];
-let randomSoundArrayCounter = 0;
-
-let hhh = (sound) => {
-    playedSoundArray.push(sound);
-    if (playedSoundArray.length === 20) {
-        playSingleSound(sound);
-        victory();
-        return
+        jQuery.ajax({
+            url: url,
+            dataType: 'jsonp',
+            success: function (response) {
+                console.log('response', response);
+                fahrenheit = response.current_observation.temp_f;
+                celsius = response.current_observation.temp_c;
+                city = response.current_observation.display_location.full;
+                icon = response.current_observation.icon;
+                $('#wetterbild').attr("src", "https://icons.wxug.com/i/c/k/" + icon + ".gif");
+                $("#temperatur").html(fahrenheit + " °F");
+                $('#city').html(city);
+            }
+        });
     }
 
-    let uuu = playedSoundArray.length - 1;
-    let ppp = randomSoundArray.length - 1;
-    if (playedSoundArray.indexOf(sound, uuu) === randomSoundArray.indexOf(sound, uuu) && (uuu === ppp)) {
-        playSingleSound(sound);
-        setTimeout(() => playRandomSoundArray(), 1500);
-    } else if (playedSoundArray.indexOf(sound, uuu) === randomSoundArray.indexOf(sound, uuu)) {
-        playSingleSound(sound);
-    } else {
-        document.querySelector('#mOne').classList.remove('hide');
-        document.querySelector('#mTwo').classList.remove('hide');
-        document.querySelector('div.red').classList.add('hide');
-        document.querySelector('div.blue').classList.add('hide');
-        document.querySelector('div.yellow').classList.add('hide');
-        document.querySelector('div.green').classList.add('hide');
-        document.querySelector('#mOne').innerHTML = 'You should have pushed: ' + randomSoundArray[uuu];
-        document.querySelector('#mTwo').innerHTML = 'You pushed: ' + playedSoundArray[uuu];
 
-    }
-};
-
-let picRandomSound = function () {
-    let r = Math.floor(Math.random() * 4);
-    let s = audioArray[r];
-    randomSoundArray.push(s);
-    playSingleSound(s);
-};
-
-let counter = randomSoundArray.length;
-
-function playRandomSoundArray(randomSoundArrayLength = (randomSoundArray.length)) {
-    document.querySelector('#run-button').style.display = 'none';
-    document.querySelector('#counter').style.display = 'flex';
-
-    if (randomSoundArrayLength < 1) {
-        picRandomSound();
-        playedSoundArray = [];
-        randomSoundArrayCounter = 0;
-        counter = randomSoundArray.length;
-        document.querySelector('#counter').innerHTML = counter;
-        console.log(randomSoundArray);
-        return;
+    function error(err) {
+        console.warn(`ERROR(${err.code}): ${err.message}`);
     }
 
-    playSingleSound(randomSoundArray[randomSoundArrayCounter]);
-    randomSoundArrayCounter = randomSoundArrayCounter + 1;
-    randomSoundArrayLength = randomSoundArrayLength - 1;
-    timeoutIDIgnore = setTimeout(function () {
-        playRandomSoundArray(randomSoundArrayLength);
-    }, 400);
-};
+    $("#celsius").click(function () {
+        // °C = (°F - 32) * 5/9
+        $("#temperatur").html(celsius + " °C");
+    });
 
-let victory = () => {
-    document.querySelector('#mOne').classList.remove('hide');
-    document.querySelector('#mTwo').classList.remove('hide');
-    document.querySelector('div.red').classList.add('hide');
-    document.querySelector('div.blue').classList.add('hide');
-    document.querySelector('div.yellow').classList.add('hide');
-    document.querySelector('div.green').classList.add('hide');
-    document.querySelector('#mOne').innerHTML = 'Congradulations!';
-    document.querySelector('#mTwo').innerHTML = 'You won this time.';
-    // document.querySelector('#run-button').style.display = 'flex'
-    // document.querySelector('#counter').style.display = 'none'
-    // randomSoundArray = [];
-    // randomSoundArrayCounter = 0;
-    // playedSoundArray = [];
-    // counter = randomSoundArray.length;
-    setTimeout(() => reset(), 3000);
-}
+    $("#fahrenheit").click(function () {
+        // °F = °C * 1,8 + 32
+        $("#temperatur").html(fahrenheit + " °F");
+    });
 
-let reset = () => {
-    document.querySelector('#mOne').classList.add('hide');
-    document.querySelector('#mTwo').classList.add('hide');
-    document.querySelector('div.red').classList.remove('hide');
-    document.querySelector('div.blue').classList.remove('hide');
-    document.querySelector('div.yellow').classList.remove('hide');
-    document.querySelector('div.green').classList.remove('hide');
-    document.querySelector('#run-button').style.display = 'flex'
-    document.querySelector('#counter').style.display = 'none'
-    randomSoundArray = [];
-    randomSoundArrayCounter = 0;
-    playedSoundArray = [];
-    counter = randomSoundArray.length;
-};
+    navigator.geolocation.getCurrentPosition(success, error, options);
+
+});
